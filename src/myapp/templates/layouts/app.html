@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="meta_description', 'DataCubeWebPlatform'">
+    <meta name="author" content="'meta_author', 'Md Irfan'">
+    
+    <title>{% block title %} My amazing site {% endblock %}</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/backend.css' %}"/>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    {% include "includes/header.html" %}
+
+    <div class="app-body" id="app">
+        {% include "includes/sidebar.html" %}
+
+        <main class="main">
+            <!-- Breadcrumb-->
+            {% include "includes/breadcrumb.html" %}
+ 
+            <div class="container-fluid">
+                <div class="animated fadeIn">
+                {% block content %}{% endblock %}
+                </div><!--animated-->
+            </div><!--container-fluid-->
+        </main>
+        {% include "includes/aside.html" %}
+        
+    </div><!--app-body-->
+
+    {% include "includes/footer.html" %}
+    <!-- @include('backend.includes.footer') -->
+    
+    <!-- Scripts -->
+    <!-- <script type="application/javascript" src="{% static 'js/manifest.js' %}"></script> -->
+    <!-- <script type="application/javascript" src="{% static 'js/vendor.js' %}"></script> -->
+    <!-- <script type="application/javascript" src="{% static 'js/backend.js' %}"></script> -->
+    {% block footer-script %}{% endblock %}
+</body>
+</html>

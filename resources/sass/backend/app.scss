@@ -1,0 +1,27 @@
+@import "../global";
+
+// If you want to override variables do it here
+@import "variables";
+
+// Import styles
+@import "~@coreui/coreui/scss/coreui";
+
+// Fix mobile footer
+.app-footer {
+    flex: 0 0;
+    padding-top: map-get($spacers, 3);
+    padding-bottom: map-get($spacers, 3);
+}
+
+.accordion > .card {
+    margin-bottom: 0;
+    border-radius: 0;
+}
+.accordion > .card .card-header {
+    padding: 0;
+    background-color: #2F353A;
+    border-left: 4px solid #c8ced3;
+}
+.accordion > .card .card-header:first-child {
+    border-radius: 0;
+}
