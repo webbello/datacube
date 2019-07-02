@@ -21,13 +21,11 @@
 
         <main class="main">
             <!-- Breadcrumb-->
-            {% include "includes/breadcrumb.html" %}
- 
-            <div class="container-fluid">
-                <div class="animated fadeIn">
+            
+            <div class="animated fadeIn">
                 {% block content %}{% endblock %}
-                </div><!--animated-->
-            </div><!--container-fluid-->
+            </div><!--animated-->
+            
         </main>
         {% include "includes/aside.html" %}
         
@@ -37,9 +35,9 @@
     <!-- @include('backend.includes.footer') -->
     
     <!-- Scripts -->
-    <!-- <script type="application/javascript" src="{% static 'js/manifest.js' %}"></script> -->
-    <!-- <script type="application/javascript" src="{% static 'js/vendor.js' %}"></script> -->
-    <!-- <script type="application/javascript" src="{% static 'js/backend.js' %}"></script> -->
+    <script type="application/javascript" src="{% static 'js/manifest.js' %}"></script>
+    <script type="application/javascript" src="{% static 'js/vendor.js' %}"></script>
+    <script type="application/javascript" src="{% static 'js/backend.js' %}"></script>
     {% block footer-script %}{% endblock %}
 </body>
 </html>

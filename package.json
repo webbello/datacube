@@ -16,7 +16,9 @@
   "license": "ISC",
   "dependencies": {
     "@coreui/icons": "^0.3.0",
-    "leaflet": "^1.5.1"
+    "flag-icon-css": "^3.3.0",
+    "leaflet": "^1.5.1",
+    "simple-line-icons": "^2.4.1"
   },
   "devDependencies": {
     "@coreui/coreui": "^2.1.12",

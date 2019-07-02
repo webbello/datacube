@@ -1,565 +1,555 @@
 <template>
-    <div class="forest-fire-container">
-        <div id="map" class="map">
-          <div class="ol-custom ol-unselectable ol-control">
-            <div class="">
-              <a type="button" class="btn btn-outline-info btn-sm  dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span style="color: #303030;"><i class="fas fa-calendar"></i></span>
-              </a>
-              <div class="dropdown-menu dropdown-menu-right">
-                <a class="dropdown-item" name="Today" :class="{ active: rangeName === 'Today' }" @click="onFilterTable(range.today, range.today, $event)">Today</a>
-                <a class="dropdown-item" name="Yesterday" :class="{ active: rangeName === 'Yesterday' }" @click="onFilterTable(range.yesterday, range.yesterday, $event)">Yesterday</a>
-                <a class="dropdown-item" name="Last 7 Days" :class="{ active: rangeName === 'Last 7 Days' }" @click="onFilterTable(range.last7days, range.today, $event)">Last 7 Days</a>
-                <a class="dropdown-item" name="Last 30 Days" :class="{ active: rangeName === 'Last 30 Days' }" @click="onFilterTable(range.last30days, range.today, $event)">Last 30 Days</a>
-                <a class="dropdown-item" name="This Month" :class="{ active: rangeName === 'This Month' }" @click="onFilterTable(range.thisMonth, range.today, $event)">This Month</a>
-                <a class="dropdown-item" name="Last Month" :class="{ active: rangeName === 'Last Month' }" @click="onFilterTable(range.lastMonthStart, range.lastMonthEnd, $event)">Last Month</a>
-                <a class="dropdown-item" name="Custom Range">Custom Range</a>
-                <div role="separator" class="dropdown-divider"></div>
-                <div style="padding-left:1.6rem;">
-                  <div class="btn-group" role="group" aria-label="Basic example">
-                    <a type="button" :class="{ active: this.range.dayNight === 'D' }" class="btn btn-info btn-sm" name="D"  @click="onFilterTable(range.from, range.to, $event)">Day</a>
-                    <a type="button" :class="{ active: this.range.dayNight === 'N' }" class="btn btn-info btn-sm" name="N"  @click="onFilterTable(range.from, range.to, $event)">Night</a>
-                    <!-- <a type="button" class="btn btn-info btn-sm" name="All" :class="{ active: range.dayNight === '' }" @click="onFilterTable(range.from, range.to, $event)">All</a> -->
+     <div id="mapid">
+       <div id="map" class="showDiv"></div>
+        <div id="tester" class="showDiv"></div>
+        <!-- Container to hold the map -->
+        <div id='loader'>
+            <div class="container">
+                <div class="planet">
+                  <div class="spots">
+                    <div class="spot"></div>
+                    <div class="spot"></div>
+                    <div class="spot"></div>
+                    <span style="font-size: 20px;color:white;">Loading.... Please wait</span>
+                    <div class="spot"></div>
+                    <div class="spot"></div>
+                    <div class="spot"></div>
                   </div>
                 </div>
-                <!-- <a class="dropdown-item float-right" href="#">Cancel</a>
-                <a class="dropdown-item" href="#">Apply</a> -->
+                <div class="orbit">
+                  <div class="satelite">
+                    <div class="head"></div>
+                    <div class="body"></div>
+                    <div class="wings">
+                      <div class="wing"></div>
+                      <div class="wing"></div>
+                    </div>
+                    <div class="tail"></div>
+                    <div class="antena">
+                      <div class="waves">
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                        <div class="wave"></div>
+                      </div>
+                    </div>
+                </div>
+                </div>
               </div>
-            </div>
-          </div>
         </div>
-        <div style="display: none;">
-          <!-- Clickable label for Vienna -->
-          <span id="status">&nbsp;0 selected features</span>
-          <a class="overlay" id="vienna" target="_blank" href="http://en.wikipedia.org/wiki/Vienna">Vienna</a>
-          <div id="marker" title="Marker"></div>
-          <!-- Popup -->
-          <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <div id="popup" title="Active Fire Data"></div>
-        </div>
-    </div>
+     </div>
 </template>
 <style>
-  #map{
-    height: calc(100vh - 55px);
-  }
-  .card-body {
-      padding: 0;
-  }
-  .forest-fire-container {
-    width: 100%;
-    /* margin:  0 -1.5rem; */
-    /* margin-top: -1.5rem !important; */
-  }
-  .main .container-fluid {
-      padding: 0 10px;
-  }
-
-  .map:-moz-full-screen {
-        height: 100%;
-  }
-  .map:-webkit-full-screen {
-    height: 100%;
-  }
-  .map:-ms-fullscreen {
-    height: 100%;
-  }
-  .map:fullscreen {
-    height: 100%;
-  }
-  .ol-rotate {
-    top: 3em;
-  }
-  .ol-custom{
-    z-index: 1000;
-    top: 3.8rem;
-    right: 3.5em;
-  }
-  .popover-body {
-    max-height: 250px;
-    overflow: auto;
-    padding: 0.5rem 0.2rem;
-  }
-  .list-group { 
-    padding-bottom: 0.5rem;
-  }
-  .list-group-item {
-    padding: 0.3rem 0.75rem;
-  }
+  #mapid { height: calc(100vh - 55px); }
 </style>
-<script>
-  import 'ol/ol.css';
-  import Feature from 'ol/Feature.js';
-  import {Map, View} from 'ol';
-  import Overlay from 'ol/Overlay.js';
-  import {toStringHDMS} from 'ol/coordinate.js';
-  import {fromLonLat, toLonLat} from 'ol/proj.js';
-  import {easeIn, easeOut} from 'ol/easing.js';
-  import {defaults as defaultControls, OverviewMap, FullScreen} from 'ol/control.js';
-  import {Image as ImageLayer, Tile as TileLayer, Vector as VectorLayer} from 'ol/layer.js';
-  import ImageWMS from 'ol/source/ImageWMS.js';
-  import TileWMS from 'ol/source/TileWMS.js';
-  import GeoJSON from 'ol/format/GeoJSON.js';
-  import {click, pointerMove, altKeyOnly} from 'ol/events/condition.js';
-  import Select from 'ol/interaction/Select.js';
-  import Circle from 'ol/geom/Circle.js';
-  import Point from 'ol/geom/Point';
-  import {OSM, Vector as VectorSource} from 'ol/source.js';
-  import Projection from 'ol/proj/Projection.js';
-  import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style.js';
-  import * as moment from 'moment';
 
-  // import ForestFireComponent from "./components/ForestFireComponent";
+<script>
+
+  import * as L from 'leaflet';
+  import "../../../../src/static/js/Bing.js";
+  import "../../../../src/static/leaflet/plugin/leaflet.pm.min.js";
+  import "../../../../src/static/leaflet/plugin/esri-leaflet.js";
+  import "../../../../src/static/leaflet/plugin/esri-leaflet-geocoder.js";
+
   //import { store } from "../store.js";
   export default {
       data() {
-        return {
-          southAsia: [76.4563, 25.0376],
-          //storeState: store.state,
-          rangeName: 'Last 7 Days',
-          range: {
-            'from': moment().subtract(7, 'days').format('YYYY-MM-DD'),
-            'to': moment().format('YYYY-MM-DD'),
-            'dayNight': '',
-            'today': moment().format('YYYY-MM-DD'),
-            'yesterday': moment().subtract(1, 'days').format('YYYY-MM-DD'),
-            'last7days': moment().subtract(7, 'days').format('YYYY-MM-DD'),
-            'last30days': moment().subtract(30, 'days').format('YYYY-MM-DD'),
-            'thisMonth': moment().startOf('month').format('YYYY-MM-DD'),
-            'lastMonthStart': moment().subtract(1, 'months').startOf('month').format('YYYY-MM-DD'),
-            'lastMonthEnd': moment().subtract(1, 'months').endOf('month').format('YYYY-MM-DD'),
-          },
-          map: {
-            type: Object,
-            default: {}
-          },
-          mapConfig: {
-            type: Object,
-            default: {}
-          },
-          view: {
-            type: Object,
-            default: {}
-          },
-          vectorSource: {
-            type: Object,
-            default: {}
-          },
-          firms: [],
-          columns: [],
-          table: 'viirs_375ms',
-          geojsonObject: {
-              "type": "FeatureCollection",
-              "crs":
-              {
-                  "type": "name",
-                  "properties":
-                  {
-                      "name": "EPSG:4326"
-                  }
-              },
-              "features": [
-              {
-                  "type": "Feature",
-                  "geometry":
-                  {
-                      "type": "Point",
-                      "coordinates": [78, 28]
-                  },
-                  "properties": {
-                      "name": "Hoyle's Marina-Linwood: 98-08-0324-P",
-                      "description": "135 S Linwood Beach, Linwood",
-                      "data": {
-                          "id": 511,
-                          "latitude": "16.126",
-                          "longitude": "95.576",
-                          "brightness": "334.3",
-                          "scan": "1.7",
-                          "track": "1.3",
-                          "acq_date": "2019-04-25",
-                          "acq_time": 720,
-                          "satellite": "A",
-                          "confidence": 79,
-                          "version": "6.0NRT",
-                          "bright_t31": "312",
-                          "frp": "30.4",
-                          "daynight": "D",
-                          "created_at": "2019-04-26 10:15:45",
-                          "updated_at": "2019-04-26 10:15:45",
-                          "geom": "0101000020E6100000BE9F1A2FDDE45740C74B378941203040",
-                          "geomjson": "{'type':'Point','coordinates':[95.576,16.126]}"
-                      }
-                  }
-              }]
-          },
-        }
-      },
-      created() {
-        this.getCapabilities();
-        let now = moment().format('LLLL');
-        //console.log('store.feature', this.storeState.features)
-        let last7days = moment().subtract(7, 'days');
-        //console.log('Momemnt', last7days)
-        //console.log('Created JsonObj',this.firms);
+        return {}
+
       },
       methods: {
-          moment: function (date) {
-            return moment(date);
-          },
-          date: function (date) {
-            return moment(date).format('MMMM Do YYYY, h:mm:ss a');
-          },
-          fetchActiveFireData() {
-            axios.get('/api/firms/'+this.table).then((res) => {
-              // console.log('FirmComponent', res.data.length);
-              //this.firms = res.data;
-              res.data.forEach((item, index) => {
-                  this.geojsonObject.features.push({
-                    'type': 'Feature',
-                    'geometry': JSON.parse(item.geomjson)
-                  })
-              });
-            })
-          },
-          getCapabilities() {
-            var GetCapabilitiesUrl = 'http://localhost:8080/geoserver/wms?service=wms&version=1.1.1&request=GetCapabilities';
-            var layersUrl = 'http://localhost:8080/geoserver/rest/layers';
-            const auth = {
-                headers: {Authorization: `Basic ${window.btoa('admin:geoserver')}`}
-            }
-            console.table(auth);
-            
-            axios.get(layersUrl, auth)
-              .then(response => {
-                parseString(response.data, (err, result) => {
-                  if(err) {
-                  //Do something
-                  console.log('Xmlerr', err)
-                  } else {
-                    console.log('XmlResult', result)
-                    this.columns = result
-                  }
-                });        
-            })
-            console.log('XmlResult', this.columns)
-          },
-          onFilterTable(from, to, event) {
-            console.log('ariapressed',event.target)
-            this.rangeName = event.target.name
-            this.range.from = from
-            this.range.to = to
-            if ( (event.target.name == 'D' && this.range.dayNight !== 'D') || (event.target.name == 'N' && this.range.dayNight !== 'N') ) {
-              this.range.dayNight = event.target.name
-            } else {
-              this.range.dayNight = '';
-            }
-            console.log(this.table);
-            console.log('from date', this.range.from)
-            console.log('to date', this.range.to)
-            console.log('dayNight', this.range.dayNight)
-            axios.get('/api/firms/'+this.table+'/'+this.range.from+'/'+this.range.to+'/'+this.range.dayNight).then((res) => {
-              //console.log('FirmComponent', res.data);
-              //this.firms = res.data;
-              this.vectorSource.clear()
-              res.data.forEach((item, index) => {
-                let geomJsonObj = JSON.parse(item.geomjson);
-                this.vectorSource.addFeature(new Feature({
-                  data:item,
-                  geometry: new Point(geomJsonObj.coordinates)
-                }));
-              });
-              // Fly to South Asia Animation
-              this.flyTo(this.southAsia, function() {});
-            });
-          },
-          onChangeTable() {
-            console.log(this.table);
-            console.log('from date', this.range.from)
-            console.log('to date', this.range.to)
-            console.log('dayNight', this.range.dayNight)
-            axios.get('/api/firms/'+this.table+'/'+this.range.from+'/'+this.range.to+'/'+this.range.dayNight).then((res) => {
-              console.info('FirmLength', res.data.length);
-              //this.firms = res.data;
-              this.vectorSource.clear()
-              res.data.forEach((item, index) => {
-                //console.log('FirmComponent', item);
-                let geomJsonObj = JSON.parse(item.geomjson);
-                this.vectorSource.addFeature(new Feature({
-                  data:item,
-                  geometry: new Point(geomJsonObj.coordinates)
-                }));
-              });
-              console.log('geojsonObject',this.vectorSource.getFeatures())
-              // Fly to South Asia Animation
-              this.flyTo(this.southAsia, function() {});
-            });
-          },
-          onEvents() {
-            //Table Layers
-            var fireTableAside = document.getElementById('fireTableAside');
-            fireTableAside.onchange = (item) => {
-                this.table = item.target.value;
-                console.log('onchange', this.table);
-                this.onChangeTable();
-            }
-            //Administratitive Layers
-            var format = 'image/png';
-            var administrative = document.getElementsByName('Administrative');
-            var checkboxes = document.querySelectorAll("#allLayers input[type=checkbox]");
-            //console.log('ForestFireComponentElements', administrative);
-            checkboxes.forEach((item, index) => {
-              var L = item.value.substring(0, item.value.indexOf(":"));
-              var url = 'https://bis.iirs.gov.in:8443/geoserver/'+L+'/wms';
-              //console.log('administrative', L);
-              var untiled = new ImageLayer({
-                source: new ImageWMS({
-                  ratio: 1,
-                  url: url,
-                  params: {
-                    'FORMAT': format,
-                    'VERSION': '1.1.1',  
-                    "LAYERS": item.value,
-                    "exceptions": 'application/vnd.ogc.se_inimage',
-                  }
-                })
-              });
-              var tiled = new TileLayer({
-                visible: false,
-                source: new TileWMS({
-                  url: url,
-                  params: {
-                    'FORMAT': format, 
-                    'VERSION': '1.1.1',
-                    tiled: true,
-                    "LAYERS": item.value,
-                    "exceptions": 'application/vnd.ogc.se_inimage',
-                    tilesOrigin: -124.73142200000001 + "," + 24.955967
-                  }
-                })
-              });
-              item.onclick = (c) => {
-                if (c.target.checked) {
-                  this.map.addLayer(untiled);
-                  console.log('ForestFireComponentElements', administrative);
-                  console.log(this.map.getLayers().getArray()[2].getProperties());
-                } else {
-                  console.log('uncheck', c)
-                  this.map.removeLayer(untiled);
-                }
-              }
-            });
-            
-          },
-          renderMap() {
-            var projection = new Projection({
-                code: 'EPSG:4326',
-                units: 'degrees',
-                axisOrientation: 'neu',
-                global: true
-            });
-            this.view = new View({
-              projection: 'EPSG:4326',
-              center: this.southAsia,
-              zoom: 4
-            });
-
-            this.mapConfig = {
-              target: 'map',
-              controls: defaultControls().extend([
-                new OverviewMap(),
-                new FullScreen()
-              ]),
-              layers: [
-                new TileLayer({
-                  source: new OSM()
-                })
-              ],
-              loadTilesWhileAnimating: true,
-              view: this.view
-            };
-
-            var image = new CircleStyle({
-              radius: 5,
-              fill: new Fill({color: 'red', width: 1}),
-              stroke: new Stroke({color: 'red', width: 0.5})
-            });
-
-            var styles = {
-              'Point': new Style({
-                image: image
-              }),
-              'LineString': new Style({
-                stroke: new Stroke({
-                  color: 'green',
-                  width: 1
-                })
-              }),
-              'MultiLineString': new Style({
-                stroke: new Stroke({
-                  color: 'green',
-                  width: 1
-                })
-              }),
-              'MultiPoint': new Style({
-                image: image
-              }),
-              'MultiPolygon': new Style({
-                stroke: new Stroke({
-                  color: 'yellow',
-                  width: 1
-                }),
-                fill: new Fill({
-                  color: 'rgba(255, 255, 0, 0.1)'
-                })
-              }),
-              'Polygon': new Style({
-                stroke: new Stroke({
-                  color: 'blue',
-                  lineDash: [4],
-                  width: 3
-                }),
-                fill: new Fill({
-                  color: 'rgba(0, 0, 255, 0.1)'
-                })
-              }),
-              'GeometryCollection': new Style({
-                stroke: new Stroke({
-                  color: 'magenta',
-                  width: 2
-                }),
-                fill: new Fill({
-                  color: 'magenta'
-                }),
-                image: new CircleStyle({
-                  radius: 10,
-                  fill: null,
-                  stroke: new Stroke({
-                    color: 'magenta'
-                  })
-                })
-              })
-            };
-
-            var styleFunction = function(feature) {
-              return styles[feature.getGeometry().getType()];
-            };
-
-            this.vectorSource = new VectorSource({
-              features: (new GeoJSON()).readFeatures(this.geojsonObject)
-            });
-
-            //this.vectorSource.addFeatures(this.storeState.features);
-            
-            var vectorLayer = new VectorLayer({
-              source: this.vectorSource,
-              style: styleFunction
-            });
-
-            this.mapConfig.layers.push(vectorLayer);
-
-            this.map = new Map(this.mapConfig);
-
-            var select = null; // ref to currently selected interaction
-
-            // select interaction working on "singleclick"
-            var selectSingleClick = new Select();
-
-            // select interaction working on "click"
-            var selectClick = new Select({
-              condition: click
-            });
-
-            // Popup showing the position the user clicked
-            var popup = new Overlay({
-              element: document.getElementById('popup'),
-              autoPan: true
-            });
-            this.map.addOverlay(popup);
-            this.map.addInteraction(selectClick);
-            selectClick.on('select', function(evt) {
-              console.log('On Select', selectClick.getFeatures())
-              var feature = evt.selected[0];
-              if (feature) {
-                var geometry = feature.getGeometry();
-                var coord = geometry.getCoordinates();
-                console.info('coord', feature.get('data'));
-                var tableData = feature.get('data');
-                // var content = '<h4>' + feature.get('name') + '</h4>';
-                var content = '<ul class="list-group">';
-                for (var key in tableData) {  
-                  if (key !== 'geom' && key !== 'geomjson') {
-                  content += '<li class="list-group-item d-flex justify-content-between align-items-center">'
-                   + key + ':' +
-                   '<span class="badge badge-primary badge-pill">' +tableData[key]+ '</span>' +
-                   '</li>';
-                 }
-                }
-                content += '</ul>';
+        /*jshint esversion: 6 */
+        /**
+         * This function is used to get cookie so that csrf token can be set while sending request to backend
+         * Already avaiable on net, just copy paste
+         * @param {string} name - Name to get cookie by name
+         * @returns {string} cookieValue - Value of cookie corresponding to name
+         */
+        getCookie(name) {  
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                let cookies = document.cookie.split(";");
                 
-                console.info('feature.getProperties', feature.getProperties());
-                var element = popup.getElement();
-                //var coordinate = evt.mapBrowserEvent.coordinate;
-                var hdms = toStringHDMS(toLonLat(coord));
-                
-                $(element).popover('dispose');
-                popup.setPosition(coord);
-                $(element).popover({
-                  placement: 'top',
-                  animation: true,
-                  html: true,
-                  trigger: 'focus',
-                  content: content
-                });
-                $(element).popover('show');
-                $('.popover-header').click(function() {
-                    if(!$(event.target).is('#popup')) {
-                        $('[data-original-title]').popover('hide');
-                        selectClick.getFeatures().clear();
+                (function() {
+                    let i = 0;
+                    for ( i = 0; i < cookies.length; i+=1) {
+                        let cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
                     }
+                })();        
+            }
+            return cookieValue;
+        },
+        /**
+         * This function is what plots the graph using plotly js
+         * @param {string} graphTitle 
+         * @param {string} xTitle 
+         * @param {string} yTitle 
+         * @param {Array} xArr 
+         * @param {Array} yArr 
+         * @param {string} plotName 
+         * @param {boolean} multipleAllowed - whether or not multiple plots allowed on one graph
+         */
+        plotGraph(graphTitle,xTitle,yTitle,xArr,yArr,plotName,multipleAllowed = false) {
+            let e = document.getElementById("selectIndex");
+                    let layout = {
+                        title: {
+                          text:graphTitle,
+                          font: {
+                            family: "Courier New, monospace",size: 24
+                          }
+                        },
+                        xaxis: {
+                          title: {
+                            text: xTitle,
+                            font: {
+                              family: "Courier New, monospace",size: 18,color: "#7f7f7f"
+                            }
+                          },
+                        },
+                        yaxis: {
+                          title: {
+                            text: yTitle,
+                            font: {
+                              family: "Courier New, monospace",size: 18,color: "#7f7f7f"
+                            }
+                          }
+                        }
+                      };
+                    TESTER = document.getElementById("tester");
+                        // Plotly.purge(TESTER);
+                        let plottingFunction = (multipleAllowed == true) ? 'plot' : 'newPlot';
+                        Plotly[plottingFunction]( TESTER, [{
+                        x: xArr,
+                        y: yArr,
+                        name : plotName}],layout);            
+        },
+        /**
+         * This function is used to send XML request to backend
+         * It uses Promises to send asynchronus requests 
+         * @param {string} url - url defined in urls.py to which request must be made
+         * @param {string} type - type of request {'POST' / 'GET'}
+         * @param {object} data - data to be sent to backend in case of POST request
+         */
+
+        sendRequest(url,type,data) {
+            let request = new XMLHttpRequest();
+            let csrftoken = this.getCookie("csrftoken");
+            return new Promise(function(resolve, reject){
+                request.onreadystatechange = () => {
+                    if (request.readyState !== 4) return;
+                    // Process the response
+              if (request.status >= 200 && request.status < 300) {
+                        // If successful
+                resolve(request.responseText);
+              } else {
+                // If failed
+                reject({
+                  status: request.status,
+                  statusText: request.statusText
                 });
               }
+                };
+                // Setup our HTTP request
+            request.open(type || "GET", url, true);
+                // Add csrf token
+                request.setRequestHeader("X-CSRFToken", csrftoken);
+                // Send the request
+                request.send(JSON.stringify(data));
             });
-          },
-          flyTo(location, done) {
-            var duration = 2000;
-            var zoom = this.view.getZoom();
-            var parts = 2;
-            var called = false;
-            function callback(complete) {
-              --parts;
-              if (called) {
-                return;
-              }
-              if (parts === 0 || !complete) {
-                called = true;
-                done(complete);
-              }
+            
+        },
+        /**
+         * This function is called whenever user clicks on map at a location
+         * It retrieves latitude and longitude values from leaflet and sends to backend
+         * Backend inturn sends back time series pixel values of all available bands as
+         * a dictionary of 3d arrays for that location.
+         * This is inturn passed to plotly.js to plot graph of index user has currently selected in drop down list
+         * @param {object} latlng - dictionary corresponding to latitude longitude of location clicked
+         */
+
+        latlonToBackend(latlng){
+            // console.log(latlng.lat);
+            // console.log(latlng.lng);
+            this.sendRequest("/myapp/getUTM/","POST",latlng)
+          .then(function (response) {
+                response = JSON.parse(response);
+                console.log(response['error']);
+                if(response['error'] == 'Empty Dataset'){
+                    // console.log('oyeeeeeeeeee');
+                    document.getElementById("loader").style.display="none";
+                    swal("Error", "Data not available for this point! Try another point..", "error");
+                    return;
+                }
+                console.log("Success!",response);
+                    let Arr3d={
+                        "red": response.red,
+                        "blue": response.blue,
+                        "green": response.green,
+                        "nir": response.nir,
+                        "swir1": response.swir1,
+                        "swir2": response.swir2,
+                    };
+                    let Arr1d = {
+                        "red":[],
+                        "blue":[],
+                        "green":[],
+                        "nir":[],
+                        "swir1":[],
+                        "swir2":[]
+                    };
+                    console.log(Arr3d);
+                    for(let band in Arr3d){ //band contains keys of Arr3d dictionary
+                        if(Arr3d.hasOwnProperty(band)){ //hasOwnProperty should be used while using for in loop... It is useful if there are undesired enumerable properties in the object prototype. This might be the case if you e.g. use certain JavaScript libraries.
+                            for(let i=0; i<Arr3d[band].length; i+=1){
+                                for(let j=0; j<Arr3d[band][i].length; j+=1){
+                                    Arr1d[band] = Arr1d[band].concat(Arr3d[band][i][j]);
+                                }
+                            }
+                        }
+                    }
+                    // console.log(Arr1d);
+                    let time = response.time;   //time's 1d array
+                    // console.log(time);
+                    this.drawGraph(Arr1d,time);
+                })        
+          .catch(function (error) {
+            console.log("Something went wrong", error);
+            });
+        },
+        /**
+         * This function takes input pixel values time series data for all years corresponding to that location and 
+         * process the indexFormula corresponding to selected Index using Math.js math.compile()
+         * and .eval() function, compile() compiles formula and eval() evaluates it.It then passes these values to plotly js to plot
+         * a graph
+         * @param {Object} Arr1d - dictionary containing 1d arrays of pixel values for all the bands
+         * @param {Array<string>} timeArr - 1d array containing time values as strings in format {YYYY-MM-DD}
+         */
+
+        drawGraph(Arr1d, timeArr) {
+            let e = document.getElementById("selectIndex");
+            let indexName = e.options[e.selectedIndex].text;
+            let url = "/myapp/getIndexFormula/";
+            let data = {"indexName":indexName};
+            this.sendRequest(url,"POST",data)
+            .then(function (response) {
+                    response = JSON.parse(response);
+                    // console.log(response);
+                    indexName = response.index.indexName;
+                    indexFormula = response.index.indexFormula;
+                    // console.log(indexFormula);
+                    yArr = [];
+                    for(let i=0; i<Arr1d.red.length; i+=1){
+                        r = Arr1d.red[i];
+                        g = Arr1d.green[i];
+                        b = Arr1d.blue[i];
+                        nir = Arr1d.nir[i];
+                        swir1 = Arr1d.swir1[i];
+                        swir2 = Arr1d.swir2[i];
+                        ans = math.compile(indexFormula).eval({
+                            "r":r,
+                            "g":g,
+                            "b":b,
+                            "nir":nir,
+                            "swir1":swir1,
+                            "swir2":swir2
+                        });
+                        console.log("[r,g,b,nir,swir1,swir2] = ",[r,g,b,nir,swir1,swir2]);
+                        if(isNaN(ans)){
+                            timeArr.splice(i,1);
+                            continue;
+                        }
+                        console.log("[eval result] = ",ans);
+                        yArr.push(ans);
+                    }
+                    // console.log("xArr is : ",xArr);
+                    this.plotGraph(indexName+' Plot','Time','indexValue',timeArr,yArr,indexName,false);
+                    document.getElementById("loader").style.display="none";
+                    swal("Success", "Graph is drawn... Click Slide Out to see the graph", "success");
+                })
+            .catch(function (error) {
+                console.log("Something went wrong", error);
+                document.getElementById("loader").style.display="none";
+                swal("Error", "Got an error"+e, "error");
+            });
+        },
+        /**
+         * This function is called when user clicks on GO button on calculator while adding his/her own 
+         * customized index. It takes index name and formula and sends a request to backend to save it in 
+         * his user account.
+         * @param {string} index - index name and formula to be saved in database
+         */
+
+        saveIndex(index){
+            console.log(index);
+            let url = "/myapp/saveIndex/";
+            this.sendRequest(url,"POST",index).then(
+                function (response) {
+                    this.getIndices();
+                }
+            ).catch(
+                function (error) {
+                    console.log("Something went wrong", error);
+                }
+            );
+        },
+        /**
+         * This function is used to query about indices available in particular user's account
+         * Takes from backend all indices available and populate the select field at top right of webpage
+         */
+
+        getIndices(){
+            let url = "/myapp/getIndices";
+            this.sendRequest(url,"GET").then(
+                function (response) {
+                    response = JSON.parse(response);
+                    indicesNames =  response.indicesNames;
+                    indicesFormulas = response.indicesFormulas;
+                    console.log(indicesNames,indicesFormulas);
+                    indexDict = {};
+                    for(let i=0; i<indicesNames.length; i+=1){
+                        a = indicesNames[i];
+                        b = indicesFormulas[i];
+                        indexDict[indicesNames[i]] = {
+                            "name" : a,
+                            "formula" : b
+                        };
+                    }
+                    console.log(indexDict);
+                    $("#selectIndex").empty();
+                    $.each(indexDict, function(key, value) {   
+                        $("#selectIndex")
+                            .append($("<option></option>")
+                                      .attr("value",key)
+                                      .text(value.name+" : "+value.formula)); 
+                  });
+                  $("#selectIndex").append("<option value='terrainProfile'>Draw Terrain Profile</option>");
+                  $("#selectIndex").append("<option value='other'>Add your own index</option>");
+                  document.getElementById("indexInputField").style.display = "none";
+                  document.getElementById("map").style.display = "block";
+                //    document.getElementById("tester").style.display = "block";
+                }
+            ).catch(
+                function (error) {
+                    console.log("Something went wrong", error);
+                }
+            );
+        },
+
+        /**
+         * Thes function are from main page
+         */
+        CheckIndex(val){
+            console.log(val);
+            var element=document.getElementById('indexInputField');
+            if(val==='other'){
+                element.style.display='block';
+                document.getElementById('map').style.display='none';
+                document.getElementById('tester').style.display='none';
             }
-            this.view.animate({
-              center: location,
-              duration: duration
-            }, callback);
-            this.view.animate({
-              zoom: zoom - 1,
-              duration: duration / 2
-            }, {
-              zoom: zoom,
-              duration: duration / 2
-            }, callback);
+            else  
+                element.style.display='none';
+            
+        },
+        submitIndex(text){
+            console.log(text);
+            indexName = document.getElementById('indexNameInput').value;
+            indexFormula = text;
+            index = {'indexName':indexName,'indexFormula':indexFormula};
+            saveIndex(index);
+        },
+        populateIndices(){
+            getIndices();
+            TESTER = document.getElementById('tester');
+            Plotly.plot( TESTER, [{
+                y: [],
+                x: []
+            }], {
+            margin: { t: 0 } } );
+            // document.getElementsByClassName('svg-container')[0].classList.toggle('hide');
+        },
+        loaded(){
+          populateIndices();
+          var element = document.getElementById('showGraphLink');
+          element.click();
+          sendRequest("/myapp/loadCube/","GET")
+          .then(function (response) {
+            console.log('cube loaded');
+          }).catch(function(e){
+              console.log('error');
+          });
+        },
+        closeIndexDiv(){
+            document.getElementById('indexInputField').style.display = 'none';
+            $('select.indexSelect').val('NDVI');
+        },
+        toggleDivClass(){
+          console.log('ji');
+          var element = document.getElementById('tester');                    
+          if(element.style.display != 'none')
+            element.style.display = 'none';
+          else
+            element.style.display = 'block';
+          return false;
+        },
+        showFootprints(){
+          footPrintsArr = []
+          sendRequest("/myapp/getFootprints/","GET")
+          .then(function (response) {
+                response = JSON.parse(response);
+                console.log(response);
+                var arr = response.dict;
+                var exteriorStyle = {
+                    "color": 'black',
+                    "weight": 0,
+                    "fillOpacity": 0.01 
+                  };
+                for(let i=0; i<arr.length; i++)
+                {
+                  lon_ul = arr[i]['    CORNER_UL_LON_PRODUCT']
+                  lat_ul = arr[i]['    CORNER_UL_LAT_PRODUCT']
+                  lon_ur = arr[i]['    CORNER_UR_LON_PRODUCT']
+                  lat_ur = arr[i]['    CORNER_UR_LAT_PRODUCT']
+                  lon_lr = arr[i]['    CORNER_LR_LON_PRODUCT']
+                  lat_lr = arr[i]['    CORNER_LR_LAT_PRODUCT']
+                  lon_ll = arr[i]['    CORNER_LL_LON_PRODUCT']
+                  lat_ll = arr[i]['    CORNER_LL_LAT_PRODUCT']
+                  data={
+                          "type": "Feature",
+                          "properties": {},
+                          "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [
+                              [
+                                [lon_ul,lat_ul],//ul
+                                [lon_ur,lat_ur],//ur
+                                [lon_lr,lat_lr], //lr
+                                [lon_ll,lat_ll],//ll
+                                [lon_ul,lat_ul]
+                              ]
+                            ]
+                          }
+                        }
+                    L.geoJSON(data,{style: exteriorStyle}).addTo(map);
+                  }
+            })        
+          .catch(function (error) {
+            console.log("Something went wrong", error);
+            });
+        },
+        onEvents(){
+          var slideOut = document.getElementById('showGraphLink');
+          var showFootprints = document.getElementById('showFootprints');
+          var selectIndex = document.getElementById('selectIndex');
+          slideOut.onclick = (item) => {
+            console.log('irfan showGraphLink')
+            this.toggleDivClass()
           }
-      },
-      filters: {
-        moment: function (date) {
-          return moment(date).format('MMMM Do YYYY, h:mm:ss a');
+          showFootprints.onclick = (item) => {
+            console.log('irfan showFootprints')
+            this.showFootprints()
+          }
+          selectIndex.onchange = (item) => {
+            console.log('irfan selectIndex', item.value)
+            this.CheckIndex(item.value)
+          }
+        },
+        renderMap() {
+          // initialize the map 
+          let map = L.map("mapid").setView([29.380304, 79.463570],10);
+          let MyBingMapsKey = "ApDp98sLLH6Lggj-ExrPosLg8IDo0exkQYMu6qU41XgOMheh1NDWyd1HHzyVbny9";
+          let bingLayer = L.bingLayer(MyBingMapsKey);
+          let osmLayer = new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
+
+          let baseLayers = {
+              "bingLayer":bingLayer,
+              "osmLayer":osmLayer
+          };
+          L.control.layers(baseLayers).addTo(map);
+
+          let searchControl = new L.esri.Controls.Geosearch().addTo(map);
+
+          let results = new L.LayerGroup().addTo(map);
+
+          searchControl.on("results", function(data){
+              results.clearLayers();
+              for (let i = data.results.length - 1; i >= 0; i--) {
+                results.addLayer(L.marker(data.results[i].latlng));
+              }
+          });
+
+
+          map.pm.addControls({
+              position: "topleft",
+              drawCircle: false,
+            });
+
+          map.on("click", (e) => {
+          let coord = e.latlng;
+          let lat = coord.lat;
+          let lng = coord.lng;
+          console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+          if( document.getElementById("selectIndex").value != "terrainProfile"){
+              document.getElementById("loader").style.display = "block";
+              this.latlonToBackend(coord);
+          }
+          }); 
+
+          let currentShapeLatLngs = [];
+
+          // listen to vertexes being added to currently drawn layer (called workingLayer)
+          map.on("pm:drawstart", ({ workingLayer }) => {
+              currentShapeLatLngs = workingLayer._latlngs;
+          });
+
+          map.on("pm:drawend", (e) => {
+              console.log(currentShapeLatLngs);
+              if(document.getElementById("selectIndex").value === "terrainProfile"){
+                  document.getElementById("loader").style.display="block";
+                  this.sendRequest("/myapp/getElevations/","POST",{"latLngArray":currentShapeLatLngs}).then((res)=>{
+                      res = JSON.parse(res);
+                      if(res['error'] == 'Empty Dataset'){
+                          // console.log('oyeeeeeeeeee');
+                          document.getElementById("loader").style.display="none";
+                          swal("Error", "Data not available for these ranges! Try some other region..", "error");
+                          return;
+                      }
+                      distElevationArray  = res.elevationProfile;
+                      y1Arr = [];
+                      y2Arr = [];
+                      xArr = [];
+                      for(let i of distElevationArray){
+                          console.log(i);
+                          xArr.push(i.distance);
+                          y1Arr.push(i.elevation.srtm);
+                          y2Arr.push(i.elevation.aster)
+                      }
+                      console.log(xArr);
+                      console.log(y1Arr);
+                      console.log(y2Arr);
+                      this.plotGraph('Elevation Profile','Distance (in Kms)','Height(in meters)',xArr,y1Arr,'srtm',false);
+                      this.plotGraph('Elevation Profile','Distance (in Kms)','Height(in meters)',xArr,y2Arr,'aster',true);
+                      // console.log(distElevationArray);
+                      document.getElementById("loader").style.display="none";
+                      swal("Success", "Elevation Profile is drawn... Click Slide Out to see the graph", "success");
+                  }).catch(
+                      (e)=>{
+                          console.log("Error ",e);
+                          alert("Some Error occured... Please try again in a while");
+                          document.getElementById("loader").style.display="none";
+                      }
+                  );
+              }
+          });
         }
       },
       mounted() {
-        //console.log('Component mounted.', this.geojsonObject)
-        
         this.renderMap();
         this.onEvents();
+
       }
   }
 </script>
